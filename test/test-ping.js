@@ -1,11 +1,13 @@
-/* global describe it before after*/
+/* global describe it before beforeEach after */
 'use strict'
 var expect = require('chai').expect
 var sinon = require('sinon')
 var cp = require('child_process')
 var os = require('os')
 var events = require('events')
+var Readable = require('stream').Readable
 var ping = require('..')
+var semver = require('semver')
 
 var windows_output = "\
 Pinging www.some-domain.com [127.0.0.1] with 32 bytes of\n\
@@ -20,16 +22,6 @@ Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)\n\
 Approximate round trip times in milli-seconds:\n\
 Minimum = 548ms, Maximum = 564ms, Average = 555ms\n\
 "
-
-var emitter = new events.EventEmitter()
-emitter.stdout = emitter
-
-function fakePing () {
-  windows_output.split(/\n/).forEach(function (line) {
-    emitter.emit('data', line + '\n')
-  })
-  emitter.emit('close', 0)
-}
 
 describe('Ping', function () {
   var host = '127.0.0.1'
@@ -66,7 +58,6 @@ describe('Ping', function () {
             expect(res.avg).to.be.above(0)
             expect(res.stddev).to.match(/^[0-9.]+$/)
           })
-      fakePing()
       return promise
     })
     it('pings ' + host + ' with custom config', function () {
@@ -83,7 +74,6 @@ describe('Ping', function () {
         expect(res.avg).to.be.above(0)
         expect(res.stddev).to.match(/^[0-9.]+$/)
       })
-      fakePing()
       return promise
     })
     it('pings ' + host + ' with some default argument gone', function () {
@@ -100,17 +90,28 @@ describe('Ping', function () {
         expect(res.avg).to.be.above(0)
         expect(res.stddev).to.match(/^[0-9.]+$/)
       })
-      fakePing()
       return promise
     })
   })
   describe('runs in a simulated Windows environment', function () {
-    // Pretend we're in Windows to test windows-specific features
+    // Pretend we're in Windows to test compatibility
+    var emitter = new events.EventEmitter()
     before(function () {
+      if (!semver.satisfies(process.versions.node, '>0.11.14')) {
+        this.skip()
+      }
       this.stubs = [
         sinon.stub(cp, 'spawn', function () { return emitter }),
         sinon.stub(os, 'platform', function () { return 'windows' })
       ]
+    })
+    beforeEach(function () {
+      emitter.stdout = new Readable()
+      emitter.stdout.push(windows_output)
+      emitter.stdout.push(null)
+      emitter.stdout.on('end', function () {
+        emitter.emit('close', 0)
+      })
     })
     after(function () {
       this.stubs.forEach(function (stub) {
@@ -129,7 +130,6 @@ describe('Ping', function () {
             expect(res.avg).to.equal(757.5)
             expect(res.stddev).to.equal(110.7643895843786)
           })
-      fakePing()
       return promise
     })
     it('pings ' + host + ' with custom config', function () {
@@ -146,7 +146,6 @@ describe('Ping', function () {
         expect(res.avg).to.equal(757.5)
         expect(res.stddev).to.equal(110.7643895843786)
       })
-      fakePing()
       return promise
     })
     it('pings ' + host + ' with some default argument gone', function () {
@@ -163,7 +162,6 @@ describe('Ping', function () {
         expect(res.avg).to.equal(757.5)
         expect(res.stddev).to.equal(110.7643895843786)
       })
-      fakePing()
       return promise
     })
   })
