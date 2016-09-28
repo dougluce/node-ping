@@ -7,13 +7,13 @@ var os = require('os')
 var events = require('events')
 var ping = require('..')
 
-var windows_output = "\n\
+var windows_output = "\
 Pinging www.some-domain.com [127.0.0.1] with 32 bytes of\n\
 \n\
-Reply from 127.0.0.1: bytes=32 time=564ms TTL=237\n\
-Reply from 127.0.0.1: bytes=32 time=555ms TTL=237\n\
-Reply from 127.0.0.1: bytes=32 time=554ms TTL=237\n\
-Reply from 127.0.0.1: bytes=32 time=548ms TTL=237\n\
+Reply from 127.0.0.1: bytes=32 time=809ms TTL=237\n\
+Reply from 127.0.0.1: bytes=32 time=907ms TTL=237\n\
+Reply from 127.0.0.1: bytes=32 time=613ms TTL=237\n\
+Reply from 127.0.0.1: bytes=32 time=701ms TTL=237\n\
 \n\
 Ping statistics for 127.0.0.1:\n\
 Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)\n\
@@ -25,8 +25,8 @@ var emitter = new events.EventEmitter()
 emitter.stdout = emitter
 
 function fakePing () {
-  windows_output.split('\n').forEach(function (line) {
-    emitter.emit('data', line)
+  windows_output.split(/\n/).forEach(function (line) {
+    emitter.emit('data', line + '\n')
   })
   emitter.emit('close', 0)
 }
@@ -61,6 +61,10 @@ describe('Ping', function () {
             expect(res.time).to.be.above(0)
             expect(res.host).to.equal(host)
             expect(res.output).to.not.be.empty
+            expect(res.min).to.be.above(0)
+            expect(res.max).to.be.above(0)
+            expect(res.avg).to.be.above(0)
+            expect(res.stddev).to.match(/^[0-9.]+$/)
           })
       fakePing()
       return promise
@@ -74,6 +78,10 @@ describe('Ping', function () {
         expect(res.time).to.be.above(0)
         expect(res.host).to.equal(host)
         expect(res.output).to.not.be.empty
+        expect(res.min).to.be.above(0)
+        expect(res.max).to.be.above(0)
+        expect(res.avg).to.be.above(0)
+        expect(res.stddev).to.match(/^[0-9.]+$/)
       })
       fakePing()
       return promise
@@ -87,6 +95,10 @@ describe('Ping', function () {
         expect(res.time).to.be.above(0)
         expect(res.host).to.equal(host)
         expect(res.output).to.not.be.empty
+        expect(res.min).to.be.above(0)
+        expect(res.max).to.be.above(0)
+        expect(res.avg).to.be.above(0)
+        expect(res.stddev).to.match(/^[0-9.]+$/)
       })
       fakePing()
       return promise
@@ -109,9 +121,13 @@ describe('Ping', function () {
       var promise = ping.promise.probe(host)
           .then(function (res) {
             expect(res.alive).to.be.true
-            expect(res.time).to.equal(564)
+            expect(res.time).to.equal(809)
             expect(res.host).to.equal(host)
             expect(res.output).to.not.be.empty
+            expect(res.min).to.equal(613)
+            expect(res.max).to.equal(907)
+            expect(res.avg).to.equal(757.5)
+            expect(res.stddev).to.equal(110.7643895843786)
           })
       fakePing()
       return promise
@@ -122,9 +138,13 @@ describe('Ping', function () {
         extra: ['-i 2']
       }).then(function (res) {
         expect(res.alive).to.be.true
-        expect(res.time).to.equal(564)
+        expect(res.time).to.equal(809)
         expect(res.host).to.equal(host)
         expect(res.output).to.not.be.empty
+        expect(res.min).to.equal(613)
+        expect(res.max).to.equal(907)
+        expect(res.avg).to.equal(757.5)
+        expect(res.stddev).to.equal(110.7643895843786)
       })
       fakePing()
       return promise
@@ -135,9 +155,13 @@ describe('Ping', function () {
         extra: ['-i 2']
       }).then(function (res) {
         expect(res.alive).to.be.true
-        expect(res.time).to.equal(564)
+        expect(res.time).to.equal(809)
         expect(res.host).to.equal(host)
         expect(res.output).to.not.be.empty
+        expect(res.min).to.equal(613)
+        expect(res.max).to.equal(907)
+        expect(res.avg).to.equal(757.5)
+        expect(res.stddev).to.equal(110.7643895843786)
       })
       fakePing()
       return promise
